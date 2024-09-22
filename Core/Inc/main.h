@@ -44,6 +44,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdbool.h>
 #include "stm32g4xx_ll_usart.h"
+#include "version.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

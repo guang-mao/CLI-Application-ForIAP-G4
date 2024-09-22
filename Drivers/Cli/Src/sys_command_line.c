@@ -46,7 +46,6 @@ const char CLI_Cmd_Help[] =
     "\r\n";
 
 const char CLI_Cmd_Version[] =
-    "\r\n"
     "[version]\r\n"
     " * show Firmware Version\r\n"
     "\r\n";
@@ -99,13 +98,13 @@ const COMMAND_S CLI_Cmd[] = {
 static uint8_t cli_help(void *para, uint8_t len)
 {
     uint8_t i;
-
-    for(i = 0; i < sizeof(CLI_Cmd) / sizeof(COMMAND_S); i++) {
-        if (NULL != CLI_Cmd[i].pHelp) {
+    for ( i = 0; i < sizeof(CLI_Cmd) / sizeof(COMMAND_S); i++ )
+    {
+        if ( NULL != CLI_Cmd[i].pHelp )
+        {
             PRINTF(CLI_Cmd[i].pHelp);
         }
     }
-
     return TRUE;
 }
 
@@ -116,7 +115,23 @@ static uint8_t cli_help(void *para, uint8_t len)
   */
 static uint8_t cli_version(void *para, uint8_t len)
 {
+	char version[] = GIT_VERSION;
+	char *major = NULL, *minor = NULL, *commit_cnt = 0, *git_hash = NULL;
 
+	major = strtok(version, "-");
+
+	minor = strtok(NULL, "-");
+
+	commit_cnt = strtok(NULL, "-");
+
+	git_hash = strtok(NULL, "-g");
+
+	PRINTF("Software version: ");
+	PRINTF(major);
+	PRINTF("-");
+	PRINTF(minor);
+	PRINTF("-");
+	PRINTF(git_hash);
 
     return TRUE;
 }
@@ -482,21 +497,24 @@ static void cli_rx_handle(RX_BUFF_TYPE *rx_buff)
                     ParaLen = Handle.len - strlen(CLI_Cmd[i].pCmd);   /* para. length */
                     ParaAddr = &Handle.buff[strlen(CLI_Cmd[i].pCmd)]; /* para. address */
 
-                    if(NULL != CLI_Cmd[i].pFun) {
-                        /* call the func. */
-                        if(CLI_Cmd[i].pFun(ParaAddr, ParaLen)) {
+                    if ( NULL != CLI_Cmd[i].pFun )
+                    {
+                    	/* call the func. */
+                        if ( CLI_Cmd[i].pFun(ParaAddr, ParaLen) )
+                        {
                             PRINTF("\r\n-> OK\r\n");
-
 #if CLI_HISTORY
                             cli_history_add((char *)Handle.buff);
 #endif  /* CLI_HISTORY */
-
                             /* ECHO */
-                            if(ENABLE == cli_echo_flag) {
+                            if ( ENABLE == cli_echo_flag )
+                            {
                                 Handle.buff[Handle.len] = '\0';
                                 PRINTF("[echo]: %s\r\n", (const char*)Handle.buff);
                             }
-                        } else {
+                        }
+                        else
+                        {
                             PRINTF("\r\n-> PARA. ERR\r\n");
                             /* parameter wrong */
                             PRINTF(CLI_Cmd[i].pHelp);
