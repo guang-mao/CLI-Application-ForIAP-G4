@@ -69,6 +69,43 @@ void Disable_SWD_GPIO(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   return;
 }
+
+uint32_t GetRDPLevel(void)
+{
+  FLASH_OBProgramInitTypeDef OBInit;
+  HAL_FLASHEx_OBGetConfig(&OBInit);
+  return OBInit.RDPLevel;
+}
+
+void EnableRDP(void)
+{
+  FLASH_OBProgramInitTypeDef OBInit;
+
+  // 解鎖 Flash 控制寄存器
+  HAL_FLASH_Unlock();
+  HAL_FLASH_OB_Unlock();
+
+  // 獲取當前的選項位配置
+  HAL_FLASHEx_OBGetConfig(&OBInit);
+
+  // 設置 RDP 等級為 Level 1
+  OBInit.OptionType = OPTIONBYTE_RDP;
+  OBInit.RDPLevel = OB_RDP_LEVEL_1;
+
+  // 設置新的選項位配置
+  if ( HAL_FLASHEx_OBProgram(&OBInit) != HAL_OK )
+  {
+	// 處理錯誤
+    ;
+  }
+
+  // 啟動選項位加載
+  HAL_FLASH_OB_Launch();
+
+  // 鎖定 Flash 控制寄存器
+  HAL_FLASH_OB_Lock();
+  HAL_FLASH_Lock();
+}
 #endif
 /* USER CODE END 0 */
 
@@ -106,8 +143,11 @@ int main(void)
 
 #if !defined(DEBUG)
   Disable_SWD_GPIO();
+  if ( GetRDPLevel() == OB_RDP_LEVEL_0 )
+  {
+  	EnableRDP();
+  }
 #endif
-
   /*
    * IAP Software update completed...
    */
