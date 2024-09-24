@@ -21,7 +21,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 #include "sys_command_line.h"
 #include "bsp_usart.h"
 /* USER CODE END Includes */
@@ -33,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define UART_BUFFER_SIZE	64
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,10 +46,6 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 // noinit variable for firmware update...
 volatile IAP_DATA_t iap_data __attribute__((section(".noinit")));
-
-uint8_t uart_rx_buffer[UART_BUFFER_SIZE] = {0x00};
-
-bool _entry = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,7 +57,19 @@ HAL_StatusTypeDef APP_UARTxInit(UART_HandleTypeDef *huart);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if !defined(DEBUG)
+void Disable_SWD_GPIO(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  __HAL_RCC_GPIOA_CLK_ENABLE();
 
+  GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  return;
+}
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -72,7 +79,8 @@ HAL_StatusTypeDef APP_UARTxInit(UART_HandleTypeDef *huart);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  // Restore global interruption after switching...
+  __enable_irq();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -95,6 +103,28 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+
+#if !defined(DEBUG)
+  Disable_SWD_GPIO();
+#endif
+
+  /*
+   * IAP Software update completed...
+   */
+  uint16_t crc16 = (uint16_t) ~(iap_data.EntryIAP);
+  if ( iap_data.EntryIAP == IAP_ENTRY_CODE && crc16 == IAP_NOT_ENTRY_CODE )
+  {
+	// .noinit ram initialize...
+    iap_data.EntryIAP	= 0x0000;
+	iap_data.crc16		= 0x0000;
+
+	/*
+	 *  Update EEPROM parameters (for new
+	 *	software updates, EEPROM parameters
+	 *	must also be updated)
+	 */
+	// EEPROM_update();
+  }
   assert_param( APP_UARTxInit(&huart2) == HAL_OK );
   cli_init(115200);
   /* USER CODE END 2 */
@@ -103,16 +133,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	if ( _entry != true )
-	{
-	  // Normal mode, just print some information
-//	  static uint8_t cnt = 0;
-//	  printf("Application Running...%d\r\n", cnt);
-//	  cnt++;
-//	  HAL_Delay(1000);
-	}
 	CLI_RUN();
-	HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -281,7 +302,7 @@ HAL_StatusTypeDef APP_UARTxInit(UART_HandleTypeDef *huart)
 {
   HAL_StatusTypeDef status = HAL_OK;
 #if 1
-  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);  // Set printf to have no buffering and print directly.
   /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
   ATOMIC_SET_BIT(huart->Instance->CR3, USART_CR3_EIE);
   ATOMIC_SET_BIT(huart->Instance->CR1, USART_CR1_RXNEIE_RXFNEIE);
@@ -289,74 +310,6 @@ HAL_StatusTypeDef APP_UARTxInit(UART_HandleTypeDef *huart)
   status = HAL_UART_Receive_IT(huart, &uart_rx_buffer, 1);
 #endif
   return status;
-}
-
-void APP_UART_RxCallback(UART_HandleTypeDef *huart)
-{
-  static uint8_t ptr = 0;
-  char ch = (char) LL_USART_ReceiveData8(huart->Instance);
-
-  switch (ch)
-  {
-    case 0x0d: {
-      if ( ptr > 0 )
-      {
-        ;
-      }
-      ptr = 0;
-      printf("\n\r");
-      printf("cli# ");
-  	  break;
-  	}
-    default: {
-      printf("%c", ch);
-      break;
-    }
-  }
-//  fflush(stdout);
-
-  uart_rx_buffer[ptr] = ch;
-  ptr = ( ptr + 1 ) & ( UART_BUFFER_SIZE - 1 );
-#if 0
-  // Normal mode...
-  if ( _entry != true )
-  {
-	if ( uart_rx_buffer == 'u' )
-	{
-	  _entry = true;
-	  printf("Do you want to perform a firmware update? (y/n)\r\n");
-	}
-	else
-	{
-	  printf("Invalid Code...\r\n");
-	}
-  }
-  // Ready to switch Bootloader...
-  else
-  {
-	if ( uart_rx_buffer == 'y' )
-	{
-	  // Used to notify the Bootloader whether to update...
-	  iap_data.EntryIAP = 0x5866;
-	  iap_data.crc16 = (uint16_t) (~iap_data.EntryIAP);
-	  printf("Switch to Bootloader mode and prepare for firmware update...\r\n");
-	  // software Restart MCU...
-	  NVIC_SystemReset();
-	}
-	else if ( uart_rx_buffer == 'n' )
-	{
-	  _entry = false;
-	  printf("Cancel firmware update...\r\n");
-	}
-	else
-	{
-	  printf("Invalid Code, please type (y/n)...\r\n");
-	}
-  }
-  // Clear buffer...
-  uart_rx_buffer = 0x00;
-  HAL_UART_Receive_IT(huart, &uart_rx_buffer, 1);
-#endif
 }
 /* USER CODE END 4 */
 

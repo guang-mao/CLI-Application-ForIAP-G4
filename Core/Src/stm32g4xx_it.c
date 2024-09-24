@@ -51,7 +51,7 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void APP_UART_RxCallback(UART_HandleTypeDef *huart);
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/

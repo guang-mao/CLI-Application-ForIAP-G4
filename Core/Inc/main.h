@@ -44,16 +44,16 @@ extern "C" {
 #include <stdio.h>
 #include <stdbool.h>
 #include "stm32g4xx_ll_usart.h"
+
+#include "../submodule/Core/Inc/def_variable.h"
+#include "../submodule/Core/Inc/app_comms.h"
+
 #include "version.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef struct __attribute__((packed)) IAP_DATA
-{
-  uint16_t	EntryIAP;
-  uint16_t	crc16;  // where use complement
-} IAP_DATA_t;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -77,8 +77,10 @@ void MX_USART2_UART_Init(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
-extern UART_HandleTypeDef huart2;
-extern volatile IAP_DATA_t iap_data __attribute__((section(".noinit")));
+#define APP_NODE_NAME				"B-G431B-ESC"
+
+extern UART_HandleTypeDef 			huart2;
+extern volatile IAP_DATA_t			iap_data __attribute__((section(".noinit")));
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

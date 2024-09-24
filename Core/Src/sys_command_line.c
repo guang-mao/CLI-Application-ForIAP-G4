@@ -47,7 +47,7 @@ const char CLI_Cmd_Help[] =
 
 const char CLI_Cmd_Version[] =
     "[version]\r\n"
-    " * show Firmware Version\r\n"
+    " * Show Software Version\r\n"
     "\r\n";
 
 const char CLI_Cmd_Clear[] =
@@ -126,12 +126,19 @@ static uint8_t cli_version(void *para, uint8_t len)
 
 	git_hash = strtok(NULL, "-g");
 
-	PRINTF("Software version: ");
-	PRINTF(major);
-	PRINTF("-");
-	PRINTF(minor);
-	PRINTF("-");
-	PRINTF(git_hash);
+	if ( major == NULL || minor == NULL || commit_cnt == NULL || git_hash == NULL )
+	{
+      PRINTF("Software version: 1-0-00000000");
+	}
+	else
+	{
+	  PRINTF("Software version: ");
+	  PRINTF(major);
+	  PRINTF("-");
+	  PRINTF(minor);
+	  PRINTF("-");
+	  PRINTF(git_hash);
+	}
 
     return TRUE;
 }
@@ -217,9 +224,13 @@ static uint8_t cli_update(void *para, uint8_t len)
 {
     PRINTF("\r\n[END]: Switch to Bootloader Mode");
     PRINTF(".");
-    HAL_Delay(50);
+    HAL_Delay(350);
     PRINTF(".");
-    HAL_Delay(50);
+    HAL_Delay(350);
+    PRINTF(".");
+    HAL_Delay(350);
+    PRINTF(".");
+    HAL_Delay(350);
     PRINTF(".");
 
     iap_data.EntryIAP = 0x5866;

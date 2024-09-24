@@ -24,16 +24,6 @@ void USART2_IRQHandler(void)
 }
 
 /**
- * @brief  NVIC conf.
- * @param  null
- * @retval null
- */
-static void NVIC_Configuration(void)
-{
-
-}
-
-/**
  * @brief  USART GPIO init.
  * @param  null
  * @retval null

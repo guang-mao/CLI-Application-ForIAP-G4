@@ -47,6 +47,7 @@ MEMORY
   NOINIT (rwx) : ORIGIN = 0x20000000, LENGTH = 0x100
   RAM    (xrw)    : ORIGIN = 0x20000100,   LENGTH = 32K - 0x100
   FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 128K - 20K
+  APP_DESCRIPTOR (rx) : ORIGIN = 0x8005000 + 128K - 20K - 0x0C,   LENGTH = 0x0C
 }
 
 /* Sections */
@@ -179,6 +180,11 @@ SECTIONS
   	/* place all symbols in input sections that start with .noinit */
     KEEP(*(*.noinit*))
   } > NOINIT
+  
+  .app_descriptor :
+  {
+  	KEEP(*(.app_descriptor))
+  } > APP_DESCRIPTOR
 
   /* Remove information from the compiler libraries */
   /DISCARD/ :
